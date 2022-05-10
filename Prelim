@@ -1,0 +1,101 @@
+stock_x_data <- read.csv("~/stock_x_dataset.csv")
+
+
+#Preliminary analysis, distribution analysis, variable analysis, etc
+
+#Analyzing our dataset, structure and checking for NA Values
+str(stock_x_data)
+
+summary(stock_x_data)
+which(is.na(stock_x_data))
+
+
+#Change Sale Price, Price, into numeric variables
+
+stock_x_data$Sale.Price <- sub(".","",stock_x_data$Sale.Price)
+stock_x_data$Sale.Price <- sub(",","",stock_x_data$Sale.Price)
+stock_x_data$Retail.Price <- sub(".","",stock_x_data$Retail.Price)
+
+
+stock_x_data$Sale.Price <- as.integer(stock_x_data$Sale.Price)
+stock_x_data$Retail.Price <- as.integer(stock_x_data$Retail.Price)
+
+
+str(stock_x_data)
+
+#Lets get amount of days sold after the release dare
+library(lubridate)
+stock_x_data$Order.Date <- mdy(stock_x_data$Order.Date)
+stock_x_data$Release.Date <- mdy(stock_x_data$Release.Date)
+
+stock_x_data$Days_Sold_After_Release <- days(stock_x_data$Order.Date - stock_x_data$Release.Date)
+
+
+stock_x_data$Days_Sold_After_Release <- stock_x_data$Order.Date - stock_x_data$Release.Date
+
+
+library(ggplot2)
+library(grDevices)
+library(RColorBrewer)
+
+
+color_for_plot <- brewer.pal(3, 'Paired')
+
+#Plot relationships of Sale Price and Days Sold after Release
+
+ggplot(stock_x_data, aes(x= Days_Sold_After_Release)) + geom_line(aes(y=Sale.Price), color = 'blue') +
+  labs(title = 'Sale Price by Days afer Release',
+       caption = 'Source: StockX Data, 2019 Kaggle Competition',
+       x = 'Days Sold After Release',
+       y = 'Sale Price')
+
+
+ggplot(stock_x_data, aes(x= Days_Sold_After_Release)) + geom_line(aes(y=Sale.Price, group = Brand, colour = Brand)) +
+  labs(title = 'Sale Price by Days afer Release',
+       caption = 'Source: StockX Data, 2019 Kaggle Competition',
+       x = 'Days Sold After Release',
+       y = 'Sale Price')
+
+
+#Add a profit column
+
+stock_x_data$Profit <- stock_x_data$Sale.Price - stock_x_data$Retail.Price
+hist(stock_x_data$Profit)
+
+#Analyzing the distributions of Sales Price and Days Sold After Release
+
+hist(stock_x_data$Sale.Price)
+hist(stock_x_data$Days_Sold_After_Release)
+
+
+
+#Transaction by State Analysis
+
+library(dplyr)
+
+count_state <- stock_x_data %>%
+  count(Buyer.Region) %>%
+  arrange(desc(n))
+
+
+count_state
+
+str(count_state)
+
+
+
+State_Graph <- ggplot(count_state, aes(x = Buyer.Region, y = n)) + geom_col(aes(reorder(Buyer.Region, n))) +
+  geom_text(aes(label=n), position = position_dodge(width = 0.7), vjust = 0.25)
+State_Graph
+
+State_Graph <- State_Graph + coord_flip()
+State_Graph
+
+#Adding the percentage of Sales by Each State
+
+count_state$PercentSales <- count_state$n / sum(count_state$n) * 100
+
+sum(count_state[1:5,3])
+
+
+sum(count_state[1:10,3])
